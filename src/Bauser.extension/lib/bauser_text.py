@@ -83,6 +83,7 @@ STRINGS = {
     "col_system": (u"System", u"Sistema"),
     "col_code": (u"Code", u"Código"),
     "col_result": (u"Result", u"Resultado"),
+    "col_parameter": (u"Parameter", u"Parâmetro"),
     "col_panels": (u"Panels", u"Painéis"),
     "classify_title": (u"Panel classification", u"Classificação dos painéis"),
     "classify_none": (u"No classification codes are set in bauser_config.json.",

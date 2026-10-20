@@ -51,9 +51,9 @@ class Level(Elem):
 class TypeElem(Elem):
     """A wall type with a classification parameter and a Description parameter."""
 
-    def __init__(self, i, name):
+    def __init__(self, i, name, key="CLASSIFICATION_CODE", label="Classification Number"):
         Elem.__init__(self, i, name)
-        self.p = {"CLASSIFICATION_CODE": Param(None, "")}
+        self.p = {key: DefParam(label, "")}
         self.Parameters = [DefParam("Description", "Panel type " + name)]
 
     def get_Parameter(self, bip):
@@ -249,7 +249,7 @@ sys.modules["System.Windows"] = types.SimpleNamespace(Visibility=types.SimpleNam
 Level(10, "Level 1", 0.0)
 Level(11, "Level 2", 10.0)
 TypeElem(20, "LSF 140")
-TypeElem(21, "Drywall")
+TypeElem(21, "Drywall", "ASSEMBLY_CODE", "Assembly Code")   # a wall type with no Classification Number
 Wall(1, 20, 11, 0.0, 10.0, 100.0, 10.0, openings=1, fire=True)   # level 2
 Wall(2, 20, 10, 8.0, 10.0, 80.0, 10.0, openings=2)    # level 1, x=8; net 80 = 100 - 20 ft2 of openings
 Wall(3, 21, 10, 1.0, 5.0, 50.0, 10.0)                 # level 1, x=1
@@ -351,13 +351,21 @@ code_param = Elem.reg[20].p["CLASSIFICATION_CODE"]
 code_param.IsReadOnly = True                                    # a read-only parameter is reported, not forced
 t, rows, w = run("Classify")
 assert code_param.text == "" and (t["v1"], t["v2"], t["v3"]) == ("0", "1", "1"), t
-assert rows == [["LSF 140", "NBR 15965", "3E.02", "3", "Read-only"]], rows
+assert rows == [["LSF 140", "NBR 15965", "3E.02", "3", "Classification Number", "Read-only"]], rows
 code_param.IsReadOnly = False
 
 t, rows, w = run("Classify")                                    # wall types with a configured code get it
-assert code_param.text == "3E.02" and Elem.reg[21].p["CLASSIFICATION_CODE"].text == "", "Drywall is left alone"
+assert code_param.text == "3E.02" and Elem.reg[21].p["ASSEMBLY_CODE"].text == "", "Drywall is left alone"
 assert (t["v1"], t["v2"], t["v3"]) == ("1", "0", "1"), t        # written, not written, types without a code
-assert rows == [["LSF 140", "NBR 15965", "3E.02", "3", "Written"]], rows
+assert rows == [["LSF 140", "NBR 15965", "3E.02", "3", "Classification Number", "Written"]], rows
+
+both = {"rates": dict(LSF_CODE["rates"], Drywall={"rate": 100, "classification": {"system": "NBR 15965", "code": "3E.03"}})}
+core.apply_config(both)                                         # no Classification Number: Assembly Code is the fallback
+t, rows, w = run("Classify")
+assert rows == [["Drywall", "NBR 15965", "3E.03", "1", "Assembly Code", "Written"],
+                ["LSF 140", "NBR 15965", "3E.02", "3", "Classification Number", "Written"]], rows
+assert Elem.reg[21].p["ASSEMBLY_CODE"].text == "3E.03"
+Elem.reg[21].p["ASSEMBLY_CODE"].text = ""                       # leave the model as the IDS checks below expect
 
 core.apply_config({})                                           # no codes configured: a message, no changes
 try:
@@ -391,6 +399,11 @@ IDS_PATH[0] = os.path.join(ROOT, "examples", "panel_requirements.ids")
 CFG["lang"] = "pt"
 t, rows, w = run("IdsCheck")
 assert t["title"] == u"Verificação IDS" and rows[0][3] == "Atende", (t["title"], rows[0])
+for name in ("Count", "Number", "Cost", "Classify", "IdsCheck", "Language"):   # ribbon titles in English and Portuguese
+    bundle = open(os.path.join(EXT, "Bauser.tab", "Panels.panel", name + ".pushbutton", "bundle.yaml"),
+                  encoding="utf-8").read()
+    assert "title:" in bundle and "en_us:" in bundle and "pt_br:" in bundle, name
+
 core.load_config()                                              # back to the shipped file
 
 # ---- Language button flips and persists --------------------------------------

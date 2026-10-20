@@ -1,0 +1,6 @@
+title:
+  en_us: "Classify\nPanels"
+  pt_br: "Classificar\npainéis"
+tooltip:
+  en_us: Write the classification code set for each wall type in bauser_config.json, for example an NBR 15965 code, to the type's classification parameter, or to Assembly Code when the wall type has none.
+  pt_br: Grava o código de classificação definido para cada tipo de parede em bauser_config.json, por exemplo um código da NBR 15965, no parâmetro de classificação do tipo ou, se o tipo não tiver um, em Código de montagem.

@@ -141,14 +141,18 @@ def _attribute_value(panel, name):
     return None
 
 
-def _candidates(panel, f):
-    """The (name, value) pairs a facet looks at, or None when the facet cannot be checked."""
+def _candidates(panel, f, aliases=None):
+    """The (name, value) pairs a facet looks at, or None when the facet cannot be checked.
+
+    aliases maps an IDS property name to other Revit parameter names (all normalised, see check).
+    """
     k = f["kind"]
     if k == "property":
         if f["name"]["kind"] == "unsupported":
             return None
+        extra = (aliases or {}).get(_norm(f["name"]["value"]), []) if f["name"]["kind"] == "equals" else []
         return [(n, v) for n, v in (panel.get("properties") or {}).items()
-                if v not in (None, "") and _matches(f["name"], n, loose=True)]
+                if v not in (None, "") and (_matches(f["name"], n, loose=True) or _norm(n) in extra)]
     if k == "classification":
         code = panel.get("classification") or ""
         if not code:
@@ -171,9 +175,9 @@ def _shown(cands):
     return ", ".join("'%s'" % v for _n, v in cands)
 
 
-def _evaluate(panel, f):
+def _evaluate(panel, f, aliases=None):
     """-> (state, detail). state is PASS, FAIL or SKIP."""
-    cands = _candidates(panel, f)
+    cands = _candidates(panel, f, aliases)
     if cands is None:
         return SKIP, "unsupported facet or restriction"
     results = [_matches(f["value"], v) if "value" in f else True for _n, v in cands]
@@ -191,7 +195,7 @@ def _evaluate(panel, f):
     return (PASS, "") if ok else (FAIL, "value %s does not match" % _shown(cands))
 
 
-def _applies(panel, spec):
+def _applies(panel, spec, aliases=None):
     """True, False, or None when the applicability uses something that is not checked."""
     for f in spec["applicability"]:
         if f["kind"] == "entity":
@@ -201,7 +205,7 @@ def _applies(panel, spec):
             if not any(hit):
                 return False
         elif f["kind"] in ("property", "classification", "attribute"):
-            state, _detail = _evaluate(panel, dict(f, cardinality="required"))
+            state, _detail = _evaluate(panel, dict(f, cardinality="required"), aliases)
             if state == SKIP:
                 return None
             if state == FAIL:
@@ -211,18 +215,23 @@ def _applies(panel, spec):
     return True
 
 
-def check(panels, ids):
+def check(panels, ids, aliases=None):
     """Check panels against the parsed IDS. -> list of rows, one per panel and requirement.
 
     A row is (panel label, specification, requirement, result, detail), result Pass, Fail or Not checked.
     A specification whose applicability is not supported gives one Not checked row.
+
+    aliases: {IDS property name: [Revit parameter names]}, for a Revit whose parameter names are
+    translated, so that FireRating can be satisfied by a parameter with a Portuguese name.
+    Names are compared with case, spaces and underscores ignored.
     """
+    aliases = dict((_norm(k), [_norm(x) for x in v]) for k, v in (aliases or {}).items())
     rows = []
     for spec in ids["specs"]:
         skipped = False
         for p in panels:
             label = p.get("mark") or "id %s" % p["id"]
-            applies = _applies(p, spec)
+            applies = _applies(p, spec, aliases)
             if applies is None:
                 if not skipped:
                     rows.append(("-", spec["name"], "applicability", SKIP, "unsupported facet"))
@@ -231,7 +240,7 @@ def check(panels, ids):
             if not applies:
                 continue
             for f in spec["requirements"]:
-                state, detail = _evaluate(p, f)
+                state, detail = _evaluate(p, f, aliases)
                 rows.append((label, spec["name"], _facet_label(f), state, detail))
     return rows
 

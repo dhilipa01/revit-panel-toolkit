@@ -4,6 +4,7 @@ __doc__ = "Check the panels against a buildingSMART IDS 1.0 file: required prope
 
 from pyrevit import forms
 
+import bauser_core as core
 import bauser_ids as ids
 import bauser_revit as rv
 import bauser_text as tx
@@ -22,7 +23,7 @@ panels, scope = rv.get_panels()
 if not panels:
     forms.alert(tx.t("no_walls"), title="Bauser", exitscript=True)
 
-rows = ids.check(panels, spec)
+rows = ids.check(panels, spec, core.IDS_ALIASES)
 if not rows:
     forms.alert(tx.t("ids_none"), title="Bauser", exitscript=True)
 sm = ids.summarise(rows)

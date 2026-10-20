@@ -1,0 +1,6 @@
+title:
+  en_us: "Panel\nCost"
+  pt_br: "Custo dos\npainéis"
+tooltip:
+  en_us: Estimate the cost as area times unit price times one plus the waste factor, in BRL with an approximate EUR figure. Prices come from bauser_config.json.
+  pt_br: Estima o custo como área vezes preço unitário vezes um mais o fator de perdas, em reais com um valor aproximado em euros. Os preços vêm de bauser_config.json.

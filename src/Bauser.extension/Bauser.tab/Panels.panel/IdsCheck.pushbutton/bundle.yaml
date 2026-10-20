@@ -1,0 +1,6 @@
+title:
+  en_us: "IDS\nCheck"
+  pt_br: "Verificar\nIDS"
+tooltip:
+  en_us: Check the panels against a buildingSMART IDS 1.0 file. The check runs on the Revit parameters, not on an IFC file.
+  pt_br: Verifica os painéis contra um arquivo IDS 1.0 do buildingSMART. A verificação usa os parâmetros do Revit, não um arquivo IFC.

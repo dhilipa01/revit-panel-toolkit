@@ -29,8 +29,9 @@ ui.show(
     [(str(written), tx.t("card_written")),
      (str(len(results) - written), tx.t("card_not_written")),
      (str(len(missing)), tx.t("card_no_code"))],
-    [tx.t("col_type"), tx.t("col_system"), tx.t("col_code"), tx.t("col_panels"), tx.t("col_result")],
-    [(typ, system, code, qty, tx.t("state_" + state)) for typ, system, code, qty, state in results],
+    [tx.t("col_type"), tx.t("col_system"), tx.t("col_code"), tx.t("col_panels"), tx.t("col_parameter"),
+     tx.t("col_result")],
+    [(typ, system, code, qty, name or "-", tx.t("state_" + state)) for typ, system, code, qty, state, name in results],
     "bauser_classification",
     tx.t("classify_note"),
 )

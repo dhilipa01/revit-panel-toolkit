@@ -1,0 +1,6 @@
+title:
+  en_us: "PT / EN\nLanguage"
+  pt_br: "PT / EN\nIdioma"
+tooltip:
+  en_us: Switch the labels in the windows between Portuguese and English. The ribbon follows the language of Revit.
+  pt_br: Alterna os rótulos das janelas entre português e inglês. A faixa de opções segue o idioma do Revit.

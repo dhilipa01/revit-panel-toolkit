@@ -1,0 +1,6 @@
+title:
+  en_us: "Count\nPanels"
+  pt_br: "Contar\npainéis"
+tooltip:
+  en_us: Count wall panels by type, with openings and total area. Uses the selection, or the whole model if nothing is selected.
+  pt_br: Conta os painéis de parede por tipo, com aberturas e área total. Usa a seleção, ou o modelo inteiro se nada estiver selecionado.

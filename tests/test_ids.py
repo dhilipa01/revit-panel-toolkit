@@ -27,9 +27,9 @@ def restriction(kind, *values):
     return '<xs:restriction base="xs:string">%s</xs:restriction>' % items
 
 
-def run(panels, applicability, requirements):
+def run(panels, applicability, requirements, aliases=None):
     parsed = ids.parse_ids(io.BytesIO((WRAP % (applicability, requirements)).encode("utf-8")))
-    return ids.check(panels, parsed)
+    return ids.check(panels, parsed, aliases)
 
 
 def panel(i, **kw):
@@ -61,6 +61,13 @@ assert states(ids.check([panel(1, classification="3E.02", classification_system=
 # property names ignore case, spaces and underscores; values must be non-empty
 assert states(run([panel(1, properties={"fire_rating": "EI60"})], WALL, prop("FireRating"))) == ["Pass"]
 assert states(run([panel(1, properties={"FireRating": ""})], WALL, prop("FireRating"))) == ["Fail"]
+
+# a translated Revit parameter name satisfies the IDS property through an alias
+pt_panel = panel(1, properties={u"Classificação de resistência ao fogo": "EI60"})
+alias = {"FireRating": [u"classificação de resistência ao fogo"]}
+assert states(run([pt_panel], WALL, prop("FireRating"))) == ["Fail"]                  # no alias: not found
+assert states(run([pt_panel], WALL, prop("FireRating"), alias)) == ["Pass"]            # alias: found
+assert states(run([pt_panel], WALL, prop("Other"), alias)) == ["Fail"]                 # an alias applies to its own property only
 
 # value checks: plain value, enumeration, pattern
 vals = {"Mat": "Steel"}

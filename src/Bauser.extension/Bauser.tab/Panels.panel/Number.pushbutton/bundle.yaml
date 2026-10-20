@@ -1,0 +1,6 @@
+title:
+  en_us: "Number\nPanels"
+  pt_br: "Numerar\npainéis"
+tooltip:
+  en_us: Write sequential factory marks (P-001, P-002 and so on) to the Mark parameter, ordered by level and then from left to right.
+  pt_br: Grava marcas sequenciais de fábrica (P-001, P-002 e assim por diante) no parâmetro Marca, ordenadas por nível e, depois, da esquerda para a direita.

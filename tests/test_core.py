@@ -79,13 +79,16 @@ assert plan == [("LSF 140", "NBR 15965", "3E.02", 2)] and missing == ["Drywall"]
 # configuration file: parsing, validation, loading
 cfg = c.parse_config({
     "default_rate": 500, "waste": 0.1, "mark_prefix": "X-", "fx": {"asof": "2026-01-02", "EUR": 6.0},
+    "ids_aliases": {"FireRating": [u"Resistência ao fogo"]},
     "rates": {"Facade": {"rate": 520, "sinapi": "96358",
                          "classification": {"system": "NBR 15965", "code": "3E.02"}},
               "Plain": {"rate": 300}}})
+assert cfg["ids_aliases"] == {"FireRating": [u"Resistência ao fogo"]}
 assert cfg["rates"] == {"Facade": (520.0, "96358"), "Plain": (300.0, "")}
 assert cfg["classifications"] == {"Facade": ("NBR 15965", "3E.02")}
 assert cfg["default_rate"] == 500.0 and cfg["fx"] == {"asof": "2026-01-02", "EUR": 6.0}
-for bad in ({"waste": "x"}, {"rates": {"A": {}}}, {"fx": {"asof": "d"}}, {"mark_prefix": 5}, {"default_rate": True}):
+for bad in ({"waste": "x"}, {"rates": {"A": {}}}, {"fx": {"asof": "d"}}, {"mark_prefix": 5}, {"default_rate": True},
+            {"ids_aliases": {"A": "not a list"}}, {"ids_aliases": {"A": [5]}}):
     try:
         c.parse_config(bad)
     except (ValueError, KeyError):

@@ -28,6 +28,8 @@ DEFAULT_RATE = 490.0  # R$/m2, a placeholder and not a published price
 RATES = {}
 # wall type name part -> (classification system, code). Written to the wall type by Classify Panels.
 CLASSIFICATIONS = {}
+# IDS property name -> Revit parameter names, for a Revit whose parameter names are translated.
+IDS_ALIASES = {}
 WASTE = 0.05          # 5% waste factor
 MARK_PREFIX = "P-"
 # BRL per 1 EUR, a static snapshot of the BCB PTAX closing (sell) rate. It goes stale; refresh it
@@ -53,9 +55,14 @@ def parse_config(data):
     """Check a configuration dict and return its settings. Raises ValueError with the bad key.
 
     Keys: default_rate, waste, mark_prefix, fx {asof, EUR}, rates {type name part: {rate, sinapi,
-    classification {system, code}}}. Every key is optional.
+    classification {system, code}}}, ids_aliases {IDS property name: [Revit parameter names]}.
+    Every key is optional.
     """
-    out = {"rates": {}, "classifications": {}}
+    out = {"rates": {}, "classifications": {}, "ids_aliases": {}}
+    for name, names in (data.get("ids_aliases") or {}).items():
+        if not isinstance(names, list):
+            raise ValueError("'ids_aliases.%s' must be a list of names, not %r" % (name, names))
+        out["ids_aliases"][name] = [_text("ids_aliases.%s" % name, n) for n in names]
     if "default_rate" in data:
         out["default_rate"] = _number("default_rate", data["default_rate"])
     if "waste" in data:
@@ -87,6 +94,8 @@ def apply_config(data):
     RATES.update(cfg["rates"])
     CLASSIFICATIONS.clear()
     CLASSIFICATIONS.update(cfg["classifications"])
+    IDS_ALIASES.clear()
+    IDS_ALIASES.update(cfg["ids_aliases"])
 
 
 def load_config(path=CONFIG_FILE):
