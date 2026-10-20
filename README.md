@@ -36,11 +36,15 @@ The sample runs without Revit, on made-up panels and illustrative prices.
 
 Panelised construction moves the production of prefabricated façade and interior wall panels into a factory. Each panel needs a quantity, a number and a price before production starts, and teams often take these from Revit schedules by hand. This extension reads them from the model, one ribbon button for each step. It is a small piece of a BIM-to-factory design workflow, and the cost estimate also gives an early view of feasibility.
 
+Brazilian public clients also ask for a classification code on model elements and for a checkable list of required information.[^nbr15965] The Classify Panels and IDS Check buttons cover those two requests without tying the extension to any one company's setup.
+
 ## Features
 
 - Counts panels by wall type, with quantity, openings and area.
 - Numbers panels in one undoable transaction, level first, then left to right.
 - Prices panels on net area or on full panel size, with a waste factor.
+- Writes a classification code, such as an NBR 15965 code, to each wall type.
+- Checks panels against a buildingSMART Information Delivery Specification (IDS) file.[^ids]
 - Shows BRL with an approximate EUR figure.
 - Exports a per-panel CSV and a budget CSV with code, description, unit, quantity, unit price and total.
 - Switches labels between Portuguese and English from the ribbon.
@@ -48,7 +52,7 @@ Panelised construction moves the production of prefabricated façade and interio
 
 ## Installation
 
-Requires Revit with pyRevit, on the default IronPython engine. pyRevit's WPF windows are not supported on the CPython engine.
+Requires Revit with pyRevit, on the default IronPython engine. pyRevit's WPF windows are not supported on the CPython engine.[^pyrevit]
 
 ```bash
 git clone https://github.com/dhilipa01/revit-panel-toolkit.git
@@ -58,7 +62,7 @@ git clone https://github.com/dhilipa01/revit-panel-toolkit.git
 2. Under Custom Extension Directories, add the `src` folder of the clone.
 3. Choose Save Settings and Reload.
 
-The extension adds one ribbon tab with four buttons.
+The extension adds one ribbon tab with six buttons.
 
 ## Usage
 
@@ -69,9 +73,11 @@ Select some walls, or select nothing to use every wall in the model, then click 
 | Count Panels | Lists wall types with quantity, openings and area | No |
 | Number Panels | Writes `P-001`, `P-002` and so on to the Mark parameter, by level and then by X | Yes, one undoable transaction |
 | Panel Cost | Asks for a pricing basis and a waste factor, then shows the cost in BRL and approximate EUR | No |
+| Classify Panels | Writes the classification code set for each wall type in `bauser_config.json` | Yes, to the wall types, one undoable transaction |
+| IDS Check | Asks for an `.ids` file and lists, for each panel, which requirements pass or fail | No |
 | PT / EN | Switches the labels between Portuguese and English | No |
 
-Panels are Revit walls. Net area is the wall Area parameter, with openings already subtracted. Full panel size is length times height, openings included. Net area is the default. The full reference is in [docs/REFERENCE.md](docs/REFERENCE.md).
+Panels are Revit walls. Net area is the wall Area parameter, with openings already subtracted.[^area] Full panel size is length times height, openings included. Net area is the default. The openings count comes from `HostObject.FindInserts`.[^findinserts] The full reference is in [docs/REFERENCE.md](docs/REFERENCE.md).
 
 ## Examples
 
@@ -95,54 +101,77 @@ Code;Description;Unit;Qty;Unit price (R$);Total (R$)
 ;TOTAL (EUR, approx.);;;;2.813,34
 ```
 
-Set a price and a reference code for a wall type in `src/Bauser.extension/lib/bauser_core.py`:
+Set a price, a SINAPI reference and a classification code for a wall type in `src/Bauser.extension/bauser_config.json`:
 
-```python
-RATES = {"Facade": (520.0, "")}   # wall type name contains "Facade": R$ 520.00/m2, no reference code
+```json
+{
+  "rates": {
+    "Facade": {
+      "rate": 520.0,
+      "sinapi": "",
+      "classification": { "system": "NBR 15965", "code": "3E.02" }
+    }
+  }
+}
 ```
+
+A wall type whose name contains "Facade" is then priced at R$ 520.00/m² and receives the code `3E.02` when you click Classify Panels. The SINAPI reference is only a label.[^sinapi]
+
+`examples/panel_requirements.ids` is an example IDS file. It asks that every wall carries a Mark, a classification in the NBR 15965 system and a fire rating. Click IDS Check, pick the file, and the window lists each panel against each requirement.
 
 ## Configuration
 
-All settings are at the top of `src/Bauser.extension/lib/bauser_core.py`.
+All settings are in `src/Bauser.extension/bauser_config.json`. Every key is optional, and a mistake in the file produces a message that names the key.
 
-| Setting | Default | Meaning |
+| Key | Default | Meaning |
 |---|---|---|
-| `DEFAULT_RATE` | `490.0` | Placeholder price in R$/m² for wall types with no entry in `RATES` |
-| `RATES` | `{}` | `{"type name part": (R$/m², "reference code")}`. The code is only a label |
-| `WASTE` | `0.05` | Default waste factor |
-| `MARK_PREFIX` | `"P-"` | Prefix for the Mark values |
-| `FX` | EUR/BRL 5.6682, 2026-10-19 | BCB PTAX closing rate, refreshed by hand |
+| `default_rate` | `490.0` | Placeholder price in R$/m² for wall types with no entry in `rates` |
+| `waste` | `0.05` | Default waste factor |
+| `mark_prefix` | `"P-"` | Prefix for the Mark values |
+| `fx` | EUR/BRL 5.6682, 2026-10-19 | Closing rate of the Banco Central do Brasil PTAX service, refreshed by hand[^ptax] |
+| `rates` | `{}` | For each wall type name part: `rate`, an optional `sinapi` reference and an optional `classification` with `system` and `code` |
 
-The language is stored in the pyRevit configuration and switched with the PT / EN button. Prices and waste in this repository are demonstration values.
+Reload pyRevit after editing the file. The language is stored in the pyRevit configuration and switched with the PT / EN button. Prices and waste in this repository are demonstration values.
 
 ## Documentation
 
-- [Reference](docs/REFERENCE.md): buttons, Revit parameters, formulas, CSV formats and module functions
-- [Standards and sources](docs/STANDARDS.md): ABNT NBR 16970, SINAPI, the BIM decrees, EU-Mercosur and exchange rates
+- [Reference](docs/REFERENCE.md): buttons, Revit parameters, formulas, CSV formats, the IDS check and module functions
+- [Standards and sources](docs/STANDARDS.md): ABNT NBR 16970, NBR 15965, IDS, SINAPI, the BIM decrees, EU-Mercosur and exchange rates
 - [Roadmap](docs/ROADMAP.md)
 - [Verify in Revit](docs/VERIFY_IN_REVIT.md)
 - [Prompts](docs/PROMPTS.md): how AI was used and how its output was checked
+- [Changelog](CHANGELOG.md)
 
 ## Development
 
 ```bash
-python tests/test_core.py      # pricing, numbering, formats, CSV
+python tests/test_core.py      # pricing, numbering, formats, configuration, CSV
+python tests/test_ids.py       # the IDS reader and checker
 python tests/test_adapter.py   # the real adapter and scripts against a small fake of pyRevit and the Revit API
+pip install ruff && ruff check .
 ```
 
 ```text
-src/Bauser.extension/   the pyRevit extension (ribbon tab, buttons, lib)
+src/Bauser.extension/   the pyRevit extension: ribbon tab, buttons, lib, bauser_config.json
 tests/                  tests that run without Revit
-examples/               runnable sample
+examples/               runnable sample and an example IDS file
 docs/                   reference, standards, roadmap, checklists
 ```
 
-The code runs on IronPython 2.7 and on CPython 3. It uses no f-strings and no type hints, and accented text uses `u""` literals.
+The code runs on IronPython 2.7 and on CPython 3. It uses no f-strings and no type hints, and accented text uses `u""` literals. A tag such as `v0.2.0` runs the release workflow, which tests the code and attaches a zip of the extension.
 
 ## Contributing
 
-Open an issue before a large change, and run both test files before a pull request. Start commit messages with `feat:`, `fix:`, `docs:` or `refactor:`.
+Open an issue before a large change, and run the three test files and `ruff check .` before a pull request. Start commit messages with `feat:`, `fix:`, `docs:` or `refactor:`.
 
 ## Licence
 
 MIT. See [LICENSE](LICENSE).
+
+[^nbr15965]: DNIT, "Caderno de Requisitos Técnicos BIM", 2023. https://www.gov.br/dnit/pt-br/assuntos/planejamento-e-pesquisa/bim-no-dnit/mosaico-de-servicos/documentos-tecnicos-bim/CRTBIM__2023_v2.pdf. Accessed 2026-10-20. Cited because it is a federal client document that names ABNT NBR 15965 as the classification system for model information and asks for a BIM Execution Plan that fixes the coding. The Santa Catarina state specification (https://www.sie.sc.gov.br/webdocs/sie/doc-tecnicos/labim/Caderno%20de%20Especifica%C3%A7%C3%B5es%20de%20Projetos%20em%20BIM_102018.pdf) goes further and requires at least one classification system in the model parameters.
+[^ids]: buildingSMART International, "What is Information Delivery Specification (IDS)". https://www.buildingsmart.org/what-is-information-delivery-specification-ids. Accessed 2026-10-20. Cited because it defines IDS as a machine-readable statement of the information a model must deliver, which is what the IDS Check button reads. The file structure used by the reader is the published 1.0 schema: https://raw.githubusercontent.com/buildingSMART/IDS/development/Schema/ids.xsd.
+[^pyrevit]: pyRevit project, source files `pyrevitlib/pyrevit/forms/_cpy.py` and `_ipy.py`. https://github.com/pyrevitlabs/pyRevit. Read 2026-10-20. Cited because the CPython form module marks `WPFWindow` as unsupported while the IronPython one implements it, which is why this extension has to run on the IronPython engine.
+[^area]: Jeremy Tammik, "Calculating Gross and Net Wall Areas", The Building Coder. https://jeremytammik.github.io/tbc/a/1296_spatial_calculator.htm. Accessed 2026-10-20. Cited because it states that the wall area parameter already has the hosted openings subtracted, so it can serve as the net figure. Autodesk Support adds that opening areas cannot be read directly as a parameter: https://www.autodesk.com/support/technical/article/caas/sfdcarticles/sfdcarticles/How-to-create-parameter-that-extract-the-area-of-openings-in-the-walls-in-Revit.html.
+[^findinserts]: Autodesk, "HostObject.FindInserts Method", Revit 2026 API reference. https://help.autodesk.com/cloudhelp/2026/ENU/Revit-API-MainReference/files/html/58990230-38cb-3af7-fd25-96ed3215a43d.htm. Accessed 2026-10-20. Cited for the signature and return value of the call that lists the doors, windows and rectangular openings hosted in a wall. `Wall` inherits it from `HostObject`.
+[^sinapi]: Caixa Econômica Federal, SINAPI. https://www.caixa.gov.br/poder-publico/modernizacao-gestao/sinapi/Paginas/default.aspx. Accessed 2026-10-20. Cited because SINAPI is the monthly Brazilian cost reference that budgets for works paid with federal money must start from, so a budget line needs a place for its composition code. Nothing is imported from SINAPI.
+[^ptax]: Banco Central do Brasil, PTAX exchange rate service. https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/. Queried 2026-10-20. Cited as the source of the EUR/BRL closing rate of 2026-10-19. The service needs no key and lists ten currencies, which does not include ARS, UYU or PYG.
