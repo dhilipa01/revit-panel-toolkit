@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ids xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://standards.buildingsmart.org/IDS http://standards.buildingsmart.org/IDS/1.0/ids.xsd" xmlns="http://standards.buildingsmart.org/IDS">
+  <info>
+    <title>Wall panel information requirements (example)</title>
+    <description>An example. Edit it to match the requirements of your own project.</description>
+    <date>2026-10-20</date>
+  </info>
+  <specifications>
+    <specification name="Wall panels are numbered, classified and rated" ifcVersion="IFC4">
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCWALL</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <attribute cardinality="required">
+          <name>
+            <simpleValue>Tag</simpleValue>
+          </name>
+        </attribute>
+        <classification cardinality="required">
+          <system>
+            <simpleValue>NBR 15965</simpleValue>
+          </system>
+        </classification>
+        <property dataType="IFCLABEL" cardinality="required">
+          <propertySet>
+            <simpleValue>Pset_WallCommon</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>FireRating</simpleValue>
+          </baseName>
+        </property>
+      </requirements>
+    </specification>
+  </specifications>
+</ids>
