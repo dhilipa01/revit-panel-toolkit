@@ -14,6 +14,8 @@ Open work, in the order it is likely to be done. Finished items stay listed so t
 - [x] Configuration in a JSON file
 - [x] Classification code per wall type
 - [x] IDS check against the Revit parameters
+- [x] Assembly Code fallback for the classification code, and IDS aliases for translated parameter names
+- [x] Portuguese ribbon titles and tooltips
 - [x] Tests that run outside Revit, linting and CI
 - [x] Release workflow and extension metadata
 
@@ -21,7 +23,8 @@ Open work, in the order it is likely to be done. Finished items stay listed so t
 
 - [ ] Run the extension in a live Revit session and record the results ([checklist](VERIFY_IN_REVIT.md))
 - [ ] Add screenshots with one frame style: same aspect ratio, padding, corner radius and window frame
-- [ ] Confirm that Revit accepts the classification code written through the API, and on which Revit versions
+- [ ] Confirm in Revit whether Classification Number exists on wall types, whether either parameter accepts the code, and on which Revit versions
+- [ ] Fill the IDS alias table with the parameter names that a Portuguese Revit shows
 - [ ] Detect walls with an attached top or base
 - [ ] Check an exported IFC file against an IDS file, not only the Revit parameters
 
@@ -36,7 +39,6 @@ Open work, in the order it is likely to be done. Finished items stay listed so t
 - [ ] Interface check for the NBR 16970-3 topics: wall to slab, wall to opening, mixed systems
 - [ ] A signed release and an installer, which Autodesk's publisher guidelines ask for[^publisher]
 - [ ] Live exchange rate with a date, and currencies PTAX does not cover (ARS, UYU, PYG)
-- [ ] Documentation in Portuguese
 
 Ideas and bugs go in [Issues](https://github.com/dhilipa01/revit-panel-toolkit/issues).
 

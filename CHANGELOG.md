@@ -2,6 +2,17 @@
 
 All notable changes to this project are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2026-10-20
+
+### Added
+- Portuguese ribbon titles and tooltips, one `bundle.yaml` for each button, shown according to the language of Revit.
+- `ids_aliases` in `bauser_config.json`, so that a Revit with translated parameter names can satisfy an IDS property.
+- A section on Brazilian documentation norms in `docs/STANDARDS.md`.
+
+### Changed
+- Classify Panels falls back to Assembly Code when the wall type has no Classification Number, and the result table names the parameter that was written.
+- The example script prints its labels and sample panel names in the chosen language.
+
 ## [0.2.0] - 2026-10-20
 
 ### Added

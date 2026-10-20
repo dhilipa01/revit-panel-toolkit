@@ -11,11 +11,12 @@ The logic is tested outside Revit. These steps cover what only a live Revit sess
 
 ## Classification
 
-1. Set a classification code for one wall type in `bauser_config.json` and reload pyRevit.
-2. Click Classify Panels. The result row says Written.
-3. Open the wall type properties and read the Classification Number parameter (OmniClass Number in older Revit versions). It should hold the code.
-4. If the row says Read-only or No parameter, note the Revit version. Whether Revit accepts any text in this parameter through the API is not yet confirmed.
-5. Ctrl+Z reverts the change for every wall of that type.
+1. Open the type properties of a wall type and note whether a Classification Number parameter (OmniClass Number before Revit 2026) is listed. An Autodesk Community answer says it is not listed for system families such as walls.
+2. Set a classification code for that wall type in `bauser_config.json` and reload pyRevit.
+3. Click Classify Panels. The result row names the parameter that was written, Classification Number or Assembly Code, and says Written.
+4. Open the type properties again and read that parameter. It should hold the code.
+5. If the row says Read-only or No parameter, note the Revit version and the parameter names that are listed. Whether either parameter accepts a code that is not in Revit's own classification file is not yet confirmed.
+6. Ctrl+Z reverts the change for every wall of that type.
 
 ## IDS check
 
@@ -23,6 +24,7 @@ The logic is tested outside Revit. These steps cover what only a live Revit sess
 2. A wall with no Mark, no classification code or no Fire Rating parameter shows Fail for that requirement.
 3. Give one wall type a Fire Rating value and a classification code, number the panels, and click again. That panel should pass all three requirements.
 4. Look at a property name that differs only in spacing from the Revit one, such as `FireRating` against Fire Rating. It should match.
+5. In a Revit with a translated interface, such as Portuguese, list the parameter name Revit shows for the fire rating, add it to `ids_aliases` in `bauser_config.json`, reload pyRevit, and click IDS Check again. The requirement should now pass.
 5. The window says the check ran on Revit parameters, not on an IFC file. A model exported to IFC should also be checked with an IFC tool.
 
 ## Net area and full panel size
@@ -37,6 +39,7 @@ The logic is tested outside Revit. These steps cover what only a live Revit sess
 
 - Walls that already share a Mark value elsewhere in the model can trigger Revit's duplicate Mark warning. Use a clean model for the check.
 - Revit 2024 and later read ElementId values through a different property from earlier versions. The code handles both, and neither has been run on a real installation.
-- Autodesk renamed the OmniClass parameters to classification parameters in a newer API version.[^rename] The code tries both names. Note which one your Revit version has.
+- Autodesk renamed the OmniClass and Uniformat parameters in the Revit 2026 API.[^rename] The code tries both names. Note which one your Revit version has.
+- With the Revit interface in Brazilian Portuguese, the ribbon shows the Portuguese button titles. Check that all six titles and tooltips appear and that none is cut off.
 
-[^rename]: Autodesk, "Major changes and renovations to the Revit API", Revit 2026, as mirrored at https://github.com/adskdimitrii/revit-api-ai-friendly-docs/blob/main/2026/ungrouped/Major-changes-and-renovations-to-the-Revit-API.md. Accessed 2026-10-20. Cited for the rename of `OMNICLASS_CODE` to `CLASSIFICATION_CODE`. This is a third-party copy of Autodesk's page, and the Revit version that introduced the change was not confirmed.
+[^rename]: revitapidocs.com, "API Changes 2026". https://www.revitapidocs.com/2026/news. Accessed 2026-10-20. Cited for the Revit 2026 API change that renamed `OMNICLASS_CODE` to `CLASSIFICATION_CODE` and `UNIFORMAT_CODE` to `ASSEMBLY_CODE`. The site is a third-party mirror of Autodesk's change list.
