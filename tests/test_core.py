@@ -47,7 +47,7 @@ assert rows_g[0]["area"] == rows_g[0]["panel"]["gross_m2"]
 
 # budget sheet: one line per type, codes carried through, totals consistent with cost_table
 lines, bt = c.budget_lines(P, waste=0.10, rates={"drywall": (101.0, "96358")})
-assert [(l["desc"], l["code"], l["qty"]) for l in lines] == [("Drywall", "96358", 4.0), ("LSF 140", "", 18.0)]
+assert [(x["desc"], x["code"], x["qty"]) for x in lines] == [("Drywall", "96358", 4.0), ("LSF 140", "", 18.0)]
 assert abs(bt["net"] - (4.0 * 101.0 + 18.0 * c.DEFAULT_RATE)) < 1e-6
 assert abs(bt["gross"] - bt["net"] * 1.10) < 1e-6
 
@@ -68,5 +68,45 @@ with tempfile.TemporaryDirectory() as d:
     assert open(f, encoding="utf-8-sig").read().splitlines() == ["Mark,Type", "P-001,LSF é"]
     c.write_csv(f, ["A", "B"], [("1,5", "x")], ";")
     assert open(f, encoding="utf-8-sig").read().splitlines() == ["A;B", "1,5;x"]
+
+# classification codes per wall type
+CL = {"LSF": ("NBR 15965", "3E.02")}
+assert c.classification_info("lsf 140 wall", CL) == ("NBR 15965", "3E.02")
+assert c.classification_info("Other", CL) == ("", "")
+plan, missing = c.classification_plan(P, CL)
+assert plan == [("LSF 140", "NBR 15965", "3E.02", 2)] and missing == ["Drywall"]
+
+# configuration file: parsing, validation, loading
+cfg = c.parse_config({
+    "default_rate": 500, "waste": 0.1, "mark_prefix": "X-", "fx": {"asof": "2026-01-02", "EUR": 6.0},
+    "rates": {"Facade": {"rate": 520, "sinapi": "96358",
+                         "classification": {"system": "NBR 15965", "code": "3E.02"}},
+              "Plain": {"rate": 300}}})
+assert cfg["rates"] == {"Facade": (520.0, "96358"), "Plain": (300.0, "")}
+assert cfg["classifications"] == {"Facade": ("NBR 15965", "3E.02")}
+assert cfg["default_rate"] == 500.0 and cfg["fx"] == {"asof": "2026-01-02", "EUR": 6.0}
+for bad in ({"waste": "x"}, {"rates": {"A": {}}}, {"fx": {"asof": "d"}}, {"mark_prefix": 5}, {"default_rate": True}):
+    try:
+        c.parse_config(bad)
+    except (ValueError, KeyError):
+        pass
+    else:
+        raise AssertionError("accepted %r" % bad)
+
+with tempfile.TemporaryDirectory() as d:
+    good = os.path.join(d, "bauser_config.json")
+    open(good, "w", encoding="utf-8").write('{"waste": 0.2, "rates": {"Facade": {"rate": 520}}}')
+    assert c.load_config(good) is True and c.WASTE == 0.2 and c.RATES == {"Facade": (520.0, "")}
+    assert c.rate_info("Facade 1") == (520.0, "") and c.load_config(os.path.join(d, "missing.json")) is False
+    broken = os.path.join(d, "broken.json")
+    open(broken, "w", encoding="utf-8").write('{"waste": "lots"}')
+    try:
+        c.load_config(broken)
+    except ValueError as ex:
+        assert str(ex).startswith("broken.json: 'waste' must be a number"), ex
+    else:
+        raise AssertionError("accepted a broken file")
+c.load_config()   # back to the shipped file
+assert c.WASTE == 0.05 and c.RATES == {} and c.DEFAULT_RATE == 490.0
 
 print("core OK")

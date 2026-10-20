@@ -9,6 +9,9 @@ A "panel" is a plain dict:
 plus an optional "element" key the Revit adapter uses to write marks back.
 """
 import csv
+import io
+import json
+import os
 import sys
 
 try:
@@ -19,17 +22,86 @@ except NameError:
 FT_TO_M = 0.3048
 FT2_TO_M2 = FT_TO_M * FT_TO_M
 
-# Demo assumptions. Edit here; a JSON file is the next step once real prices exist.
-DEFAULT_RATE = 490.0  # R$/m2, placeholder (not a Bauser or SINAPI price)
-# wall-type-name substring -> (R$/m2, SINAPI composition code or "").
-# Example: {"Drywall": (101.0, "96358")}. The code is only a label; nothing is imported from SINAPI.
+# Defaults, overridden by bauser_config.json in the extension folder (see load_config below).
+DEFAULT_RATE = 490.0  # R$/m2, a placeholder and not a published price
+# wall type name part -> (R$/m2, SINAPI composition code or ""). The code is only a label.
 RATES = {}
+# wall type name part -> (classification system, code). Written to the wall type by Classify Panels.
+CLASSIFICATIONS = {}
 WASTE = 0.05          # 5% waste factor
 MARK_PREFIX = "P-"
-
-# Static snapshot, refreshed by hand. Limit: it goes stale. Next step: a dated fetch
+# BRL per 1 EUR, a static snapshot of the BCB PTAX closing (sell) rate. It goes stale; refresh it
 # from https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/ (no key needed).
-FX = {"asof": "2026-10-19", "EUR": 5.6682}  # BRL per 1 EUR, BCB PTAX closing (sell)
+FX = {"asof": "2026-10-19", "EUR": 5.6682}
+
+CONFIG_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bauser_config.json")
+
+
+def _number(key, value):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError("'%s' must be a number, not %r" % (key, value))
+    return float(value)
+
+
+def _text(key, value):
+    if not isinstance(value, _STR):
+        raise ValueError("'%s' must be text, not %r" % (key, value))
+    return value
+
+
+def parse_config(data):
+    """Check a configuration dict and return its settings. Raises ValueError with the bad key.
+
+    Keys: default_rate, waste, mark_prefix, fx {asof, EUR}, rates {type name part: {rate, sinapi,
+    classification {system, code}}}. Every key is optional.
+    """
+    out = {"rates": {}, "classifications": {}}
+    if "default_rate" in data:
+        out["default_rate"] = _number("default_rate", data["default_rate"])
+    if "waste" in data:
+        out["waste"] = _number("waste", data["waste"])
+    if "mark_prefix" in data:
+        out["mark_prefix"] = _text("mark_prefix", data["mark_prefix"])
+    if "fx" in data:
+        out["fx"] = {"asof": _text("fx.asof", data["fx"]["asof"]), "EUR": _number("fx.EUR", data["fx"]["EUR"])}
+    for name, entry in (data.get("rates") or {}).items():
+        out["rates"][name] = (_number("rates.%s.rate" % name, entry["rate"]),
+                              _text("rates.%s.sinapi" % name, entry.get("sinapi", "")))
+        cls = entry.get("classification")
+        if cls and cls.get("code"):
+            out["classifications"][name] = (_text("rates.%s.classification.system" % name, cls.get("system", "")),
+                                            _text("rates.%s.classification.code" % name, cls["code"]))
+    return out
+
+
+def apply_config(data):
+    """Apply a parsed configuration to this module's settings."""
+    global DEFAULT_RATE, WASTE, MARK_PREFIX
+    cfg = parse_config(data)
+    DEFAULT_RATE = cfg.get("default_rate", DEFAULT_RATE)
+    WASTE = cfg.get("waste", WASTE)
+    MARK_PREFIX = cfg.get("mark_prefix", MARK_PREFIX)
+    if "fx" in cfg:
+        FX.update(cfg["fx"])
+    RATES.clear()
+    RATES.update(cfg["rates"])
+    CLASSIFICATIONS.clear()
+    CLASSIFICATIONS.update(cfg["classifications"])
+
+
+def load_config(path=CONFIG_FILE):
+    """Read the JSON configuration if the file exists. -> True when a file was applied."""
+    if not os.path.exists(path):
+        return False
+    try:
+        with io.open(path, "r", encoding="utf-8-sig") as f:
+            apply_config(json.load(f))
+    except (ValueError, KeyError, TypeError, AttributeError) as ex:
+        raise ValueError("%s: %s" % (os.path.basename(path), ex))
+    return True
+
+
+load_config()   # before the functions below, so their default arguments see the configured values
 
 
 def text(v):
@@ -52,6 +124,31 @@ def rate_info(type_name, rates=None):
         if key.lower() in low:
             return val
     return DEFAULT_RATE, ""
+
+
+def classification_info(type_name, classes=None):
+    """First CLASSIFICATIONS key found in the type name wins (case-insensitive). -> (system, code)"""
+    low = (type_name or "").lower()
+    for key, val in (CLASSIFICATIONS if classes is None else classes).items():
+        if key.lower() in low:
+            return val
+    return "", ""
+
+
+def classification_plan(panels, classes=None):
+    """Which wall types get which code. -> (plan, missing)
+
+    plan: [(type, system, code, panel_count)] for types that match a configured classification.
+    missing: wall types with no configured classification.
+    """
+    plan, missing = [], []
+    for typ, qty, _area, _openings in summarize_by_type(panels):
+        system, code = classification_info(typ, classes)
+        if code:
+            plan.append((typ, system, code, qty))
+        else:
+            missing.append(typ)
+    return plan, missing
 
 
 def fmt(v, d=2, lang="en"):
