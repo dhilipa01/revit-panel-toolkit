@@ -32,6 +32,19 @@ The sample runs without Revit, on made-up panels and illustrative prices.
 
 > Status: the logic is covered by tests that run outside Revit. The extension has not yet been run in a live Revit session. See [Verify in Revit](docs/VERIFY_IN_REVIT.md).
 
+## Documentação em português
+
+Toda a documentação existe também em português do Brasil, com o mesmo rigor de fontes e notas de rodapé:
+
+- [README em português](README.pt-BR.md)
+- [Referência](docs/pt-BR/REFERENCIA.md)
+- [Normas e fontes](docs/pt-BR/NORMAS_E_FONTES.md)
+- [Roteiro](docs/pt-BR/ROTEIRO.md)
+- [Verificar no Revit](docs/pt-BR/VERIFICAR_NO_REVIT.md)
+- [Prompts](docs/pt-BR/PROMPTS.md)
+
+The same documentation is available in Brazilian Portuguese, with the same sourcing and footnotes. The ribbon titles and tooltips are also translated and follow the language of Revit.
+
 ## Why
 
 Panelised construction moves the production of prefabricated façade and interior wall panels into a factory. Each panel needs a quantity, a number and a price before production starts, and teams often take these from Revit schedules by hand. This extension reads them from the model, one ribbon button for each step. It is a small piece of a BIM-to-factory design workflow, and the cost estimate also gives an early view of feasibility.
@@ -143,6 +156,7 @@ Reload pyRevit after editing the file. The language of the windows is stored in 
 - [Verify in Revit](docs/VERIFY_IN_REVIT.md)
 - [Prompts](docs/PROMPTS.md): how AI was used and how its output was checked
 - [Changelog](CHANGELOG.md)
+- [Documentação em português](README.pt-BR.md)
 
 ## Development
 
@@ -158,13 +172,14 @@ src/Bauser.extension/   the pyRevit extension: ribbon tab, buttons, lib, bauser_
 tests/                  tests that run without Revit
 examples/               runnable sample and an example IDS file
 docs/                   reference, standards, roadmap, checklists
+docs/pt-BR/             the same documentation in Brazilian Portuguese
 ```
 
 The code runs on IronPython 2.7 and on CPython 3. It uses no f-strings and no type hints, and accented text uses `u""` literals. A tag such as `v0.3.0` runs the release workflow, which tests the code and attaches a zip of the extension.
 
 ## Contributing
 
-Open an issue before a large change, and run the three test files and `ruff check .` before a pull request. Start commit messages with `feat:`, `fix:`, `docs:` or `refactor:`.
+Open an issue before a large change, and run the three test files and `ruff check .` before a pull request. Start commit messages with `feat:`, `fix:`, `docs:` or `refactor:`. Documentation changes should be made in both languages.
 
 ## Licence
 

@@ -5,6 +5,7 @@ All notable changes to this project are listed here. The format follows [Keep a 
 ## [0.3.0] - 2026-10-20
 
 ### Added
+- Documentation in Brazilian Portuguese: `README.pt-BR.md` and `docs/pt-BR/`, with the same footnoted sources.
 - Portuguese ribbon titles and tooltips, one `bundle.yaml` for each button, shown according to the language of Revit.
 - `ids_aliases` in `bauser_config.json`, so that a Revit with translated parameter names can satisfy an IDS property.
 - A section on Brazilian documentation norms in `docs/STANDARDS.md`.

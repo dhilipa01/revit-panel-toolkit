@@ -15,7 +15,7 @@ Open work, in the order it is likely to be done. Finished items stay listed so t
 - [x] Classification code per wall type
 - [x] IDS check against the Revit parameters
 - [x] Assembly Code fallback for the classification code, and IDS aliases for translated parameter names
-- [x] Portuguese ribbon titles and tooltips
+- [x] Documentation in Brazilian Portuguese, and Portuguese ribbon titles and tooltips
 - [x] Tests that run outside Revit, linting and CI
 - [x] Release workflow and extension metadata
 
@@ -39,6 +39,7 @@ Open work, in the order it is likely to be done. Finished items stay listed so t
 - [ ] Interface check for the NBR 16970-3 topics: wall to slab, wall to opening, mixed systems
 - [ ] A signed release and an installer, which Autodesk's publisher guidelines ask for[^publisher]
 - [ ] Live exchange rate with a date, and currencies PTAX does not cover (ARS, UYU, PYG)
+- [ ] A review of the Portuguese documentation by a native speaker who works with Revit
 
 Ideas and bugs go in [Issues](https://github.com/dhilipa01/revit-panel-toolkit/issues).
 
