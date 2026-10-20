@@ -5,12 +5,12 @@
   <img src="docs/media/wordmark-light.svg" alt="revit-panel-toolkit" width="640">
 </picture>
 
-**Count, number and price wall panels from the Revit ribbon.**
+Calculate the number and price of wall panels from the Revit ribbon.
 
-A pyRevit extension for panelized, industrialized construction.
+A pyRevit extension for panelised, industrialised construction.
 
 [![CI](https://img.shields.io/github/actions/workflow/status/dhilipa01/revit-panel-toolkit/ci.yml?branch=main&style=flat-square&label=CI&labelColor=14213D&color=3A4A66)](https://github.com/dhilipa01/revit-panel-toolkit/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/license-MIT-3A4A66?style=flat-square&labelColor=14213D)](LICENSE)
+[![Licence](https://img.shields.io/badge/licence-MIT-3A4A66?style=flat-square&labelColor=14213D)](LICENSE)
 [![pyRevit](https://img.shields.io/badge/pyRevit-IronPython-3A4A66?style=flat-square&labelColor=14213D)](https://github.com/pyrevitlabs/pyRevit)
 
 </div>
@@ -28,23 +28,23 @@ Total        R$ 13,362.51  (with 5% waste)
 Approx.      € 2,357.45  (EUR/BRL 5.6682, 2026-10-19)
 ```
 
-The sample above runs without Revit, on made-up panels and illustrative prices.
+The sample runs without Revit, on made-up panels and illustrative prices.
 
-> **Status.** The logic is covered by tests that run outside Revit. The extension itself has not yet been run in a live Revit session. See [Verify in Revit](docs/VERIFY_IN_REVIT.md).
+> Status: the logic is covered by tests that run outside Revit. The extension has not yet been run in a live Revit session. See [Verify in Revit](docs/VERIFY_IN_REVIT.md).
 
 ## Why
 
-Panelized construction moves the production of prefabricated façade and interior wall panels into a factory. Each panel has to be counted, numbered and priced before it is built. Teams often do that by hand from Revit schedules. This extension puts each step behind one ribbon button, so the figures come straight from the model and reach the factory in one pass.
+Panelised construction moves the production of prefabricated façade and interior wall panels into a factory. Each panel needs a quantity, a number and a price before production starts, and teams often take these from Revit schedules by hand. This extension reads them from the model, one ribbon button for each step. It is a small piece of a BIM-to-factory design workflow, and the cost estimate also gives an early view of feasibility.
 
 ## Features
 
-- Count panels by wall type, with quantity, openings and area.
-- Number panels in one undoable transaction, level first, then left to right.
-- Price panels on net area or on full panel size, with a waste factor.
-- Show BRL with an approximate EUR figure.
-- Export a per-panel CSV and a budget CSV with code, description, unit, quantity, unit price and total.
-- Switch labels between Portuguese and English from the ribbon.
-- Keep the logic in plain Python, so it runs and is tested outside Revit.
+- Counts panels by wall type, with quantity, openings and area.
+- Numbers panels in one undoable transaction, level first, then left to right.
+- Prices panels on net area or on full panel size, with a waste factor.
+- Shows BRL with an approximate EUR figure.
+- Exports a per-panel CSV and a budget CSV with code, description, unit, quantity, unit price and total.
+- Switches labels between Portuguese and English from the ribbon.
+- Keeps the logic in plain Python, so it runs and is tested outside Revit.
 
 ## Installation
 
@@ -67,7 +67,7 @@ Select some walls, or select nothing to use every wall in the model, then click 
 | Button | What it does | Changes the model |
 |---|---|---|
 | Count Panels | Lists wall types with quantity, openings and area | No |
-| Number Panels | Writes `P-001`, `P-002`, ... to the Mark parameter, by level and then by X | Yes, one undoable transaction |
+| Number Panels | Writes `P-001`, `P-002` and so on to the Mark parameter, by level and then by X | Yes, one undoable transaction |
 | Panel Cost | Asks for a pricing basis and a waste factor, then shows the cost in BRL and approximate EUR | No |
 | PT / EN | Switches the labels between Portuguese and English | No |
 
@@ -98,30 +98,30 @@ Code;Description;Unit;Qty;Unit price (R$);Total (R$)
 Set a price and a reference code for a wall type in `src/Bauser.extension/lib/bauser_core.py`:
 
 ```python
-RATES = {"Facade": (520.0, "")}   # wall type name contains "Facade" -> R$ 520.00/m2, no reference code
+RATES = {"Facade": (520.0, "")}   # wall type name contains "Facade": R$ 520.00/m2, no reference code
 ```
 
 ## Configuration
 
-All settings live at the top of `src/Bauser.extension/lib/bauser_core.py`.
+All settings are at the top of `src/Bauser.extension/lib/bauser_core.py`.
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `DEFAULT_RATE` | `490.0` | Placeholder price in R$/m2 for wall types with no entry in `RATES` |
-| `RATES` | `{}` | `{"type name part": (R$/m2, "reference code")}`. The code is only a label |
+| `DEFAULT_RATE` | `490.0` | Placeholder price in R$/m² for wall types with no entry in `RATES` |
+| `RATES` | `{}` | `{"type name part": (R$/m², "reference code")}`. The code is only a label |
 | `WASTE` | `0.05` | Default waste factor |
 | `MARK_PREFIX` | `"P-"` | Prefix for the Mark values |
 | `FX` | EUR/BRL 5.6682, 2026-10-19 | BCB PTAX closing rate, refreshed by hand |
 
-The language is stored in the pyRevit configuration and switched with the PT / EN button. Prices and waste in this repository are demo values.
+The language is stored in the pyRevit configuration and switched with the PT / EN button. Prices and waste in this repository are demonstration values.
 
 ## Documentation
 
-- [Reference](docs/REFERENCE.md): buttons, Revit parameters, formulas, CSV formats, module functions
-- [Standards and sources](docs/STANDARDS.md): ABNT NBR 16970, SINAPI, BIM decrees, EU-Mercosur, exchange rates
+- [Reference](docs/REFERENCE.md): buttons, Revit parameters, formulas, CSV formats and module functions
+- [Standards and sources](docs/STANDARDS.md): ABNT NBR 16970, SINAPI, the BIM decrees, EU-Mercosur and exchange rates
 - [Roadmap](docs/ROADMAP.md)
 - [Verify in Revit](docs/VERIFY_IN_REVIT.md)
-- [Prompts](docs/PROMPTS.md): how AI was used, and how its output was checked
+- [Prompts](docs/PROMPTS.md): how AI was used and how its output was checked
 
 ## Development
 
@@ -137,12 +137,12 @@ examples/               runnable sample
 docs/                   reference, standards, roadmap, checklists
 ```
 
-The code runs on IronPython 2.7 and on CPython 3: no f-strings, no type hints, and accented text uses `u""` literals.
+The code runs on IronPython 2.7 and on CPython 3. It uses no f-strings and no type hints, and accented text uses `u""` literals.
 
 ## Contributing
 
-Open an issue before a large change. Run both test files before a pull request. Start commit messages with `feat:`, `fix:`, `docs:` or `refactor:`.
+Open an issue before a large change, and run both test files before a pull request. Start commit messages with `feat:`, `fix:`, `docs:` or `refactor:`.
 
-## License
+## Licence
 
 MIT. See [LICENSE](LICENSE).

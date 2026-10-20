@@ -1,4 +1,4 @@
-"""Run: python3 test_core.py  (checks the Revit-free logic; the Revit adapter can't run on Linux)"""
+"""Run: python tests/test_core.py. Covers the logic that has no Revit dependency."""
 import os
 import sys
 import tempfile

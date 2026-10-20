@@ -1,8 +1,9 @@
-"""Run: python3 test_adapter.py
+"""Run: python tests/test_adapter.py
 
-Runs the REAL bauser_revit / bauser_ui / button scripts against a tiny fake of
-pyRevit + the Revit API, so typos and wrong call shapes surface on Linux.
-It cannot prove the real Revit API behaves the same; see README 'Verify in Revit'.
+Runs the real bauser_revit and bauser_ui modules and the button scripts against a
+small fake of pyRevit and the Revit API, so typos and wrong call shapes show up on
+Linux. It cannot show that the Revit API behaves the same way. See
+docs/VERIFY_IN_REVIT.md for the checks that need Revit.
 """
 import contextlib
 import os

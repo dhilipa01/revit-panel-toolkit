@@ -23,6 +23,7 @@ Open work, in the order it is likely to be done. Finished items stay listed so t
 ## Later
 
 - [ ] Split a wall into panels
+- [ ] Automatic panel detailing for factory production
 - [ ] Create a panel assembly with its assembly views and sheet, for factory shop drawings
 - [ ] Export a cutting list for factory production
 - [ ] Interface check for the NBR 16970-3 topics: wall to slab, wall to opening, mixed systems

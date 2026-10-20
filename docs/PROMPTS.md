@@ -36,8 +36,6 @@ Do not invent members. If unsure, write "unverified".
 | Results window | pyRevit `WPFWindow`, `FindName`; `forms/_cpy.py` | WPF is unsupported on CPython, so the extension must use IronPython |
 | Accented text | IronPython 2.7 string rules | Every accented literal became `u""` |
 
-## Lessons
+## Notes
 
-- A first draft written from memory looked right and was still unverified. Reading the pyRevit source found the CPython limit before it could fail in front of a user.
-- Ask the model to list the API members it used. That list becomes the checklist.
-- Prices, waste and the exchange rate are placeholders until a real source supplies them. The window says so.
+A first draft written from memory looked right and was still unverified. Reading the pyRevit source found the CPython limit before it could fail in front of a user. Asking the model to list the API members it used gives the checklist above. Prices, waste and the exchange rate are placeholders until a real source supplies them, and the window says so.
