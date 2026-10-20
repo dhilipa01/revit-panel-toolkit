@@ -2,4 +2,6 @@ layout:
   - Count
   - Number
   - Cost
+  - Classify
+  - IdsCheck
   - Language

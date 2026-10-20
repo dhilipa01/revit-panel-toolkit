@@ -1,15 +1,50 @@
 # -*- coding: utf-8 -*-
-"""Thin Revit adapter: walls -> panel dicts, and writing marks back.
+"""Thin Revit adapter: walls -> panel dicts, and writing marks and classification codes back.
 
-Only long-stable API calls are used (built-in parameters, FilteredElementCollector,
-Transaction), so it behaves the same on Revit 2019-2026.
+It uses built-in parameters, FilteredElementCollector and transactions. Where Autodesk renamed a
+member between versions (ElementId.Value, the classification parameter) both names are tried.
+It has not been run on a real Revit installation; see docs/VERIFY_IN_REVIT.md.
 """
-from pyrevit import revit, DB
-
+import bauser_core as core
 import bauser_text as tx
-from bauser_core import ft_to_m, ft2_to_m2
+from bauser_core import ft2_to_m2, ft_to_m
+from pyrevit import DB, revit
 
 BIP = DB.BuiltInParameter
+
+
+def _classification_param(wall_type):
+    """The type parameter that holds a classification code, or None.
+
+    Autodesk renamed OMNICLASS_CODE to CLASSIFICATION_CODE ("Classification Number") in newer API
+    versions, so both names are tried, newest first.
+    """
+    if wall_type is None:
+        return None
+    for name in ("CLASSIFICATION_CODE", "OMNICLASS_CODE"):
+        bip = getattr(BIP, name, None)
+        if bip is not None:
+            p = wall_type.get_Parameter(bip)
+            if p is not None:
+                return p
+    return None
+
+
+def _read_properties(*elements):
+    """Every readable parameter of the given elements as {name: text}. Later elements do not
+    overwrite earlier ones, so pass the instance first and its type second."""
+    props = {}
+    for el in elements:
+        if el is None:
+            continue
+        for p in el.Parameters:
+            name = p.Definition.Name
+            if name in props:
+                continue
+            value = p.AsValueString() or p.AsString()
+            if value:
+                props[name] = value
+    return props
 
 
 def _eid(el):
@@ -75,11 +110,17 @@ def get_panels(doc=None, uidoc=None):
         # doors, windows and rectangular openings hosted in this wall (Autodesk: HostObject.FindInserts)
         openings = len(list(w.FindInserts(True, False, False, False)))
         mark = w.get_Parameter(BIP.ALL_MODEL_MARK)
+        class_param = _classification_param(t)
+        type_name = _name(t) if t is not None else "?"
         panels.append({
             "element": w,
+            "type_element": t,
+            "properties": _read_properties(w, t),
+            "classification": (class_param.AsString() or "") if class_param is not None else "",
+            "classification_system": core.classification_info(type_name)[0],
             "id": _eid(w),
             "mark": (mark.AsString() or "") if mark is not None else "",
-            "type": _name(t) if t is not None else "?",
+            "type": type_name,
             "level": _name(lvl) if lvl is not None else "-",
             "elev": lvl.Elevation if lvl is not None else 0.0,
             "x": pt.X if pt is not None else 0.0,
@@ -92,6 +133,31 @@ def get_panels(doc=None, uidoc=None):
             "irregular": _is_irregular(w),
         })
     return panels, scope
+
+
+def set_classifications(panels, plan, doc=None):
+    """Write the planned classification code to each wall type, in one transaction.
+
+    plan: [(type name, system, code, panel count)] from core.classification_plan.
+    -> [(type name, system, code, panel count, "written" | "read-only" | "no parameter")]
+    """
+    doc = doc or revit.doc
+    types = {}
+    for p in panels:
+        types.setdefault(p["type"], p["type_element"])
+    results = []
+    with revit.Transaction("Bauser: Classify panels", doc=doc):
+        for typ, system, code, qty in plan:
+            param = _classification_param(types.get(typ))
+            if param is None:
+                state = "no parameter"
+            elif param.IsReadOnly:
+                state = "read-only"
+            else:
+                param.Set(code)
+                state = "written"
+            results.append((typ, system, code, qty, state))
+    return results
 
 
 def set_marks(plan, doc=None):

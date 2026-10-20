@@ -90,6 +90,6 @@ def show(title, subtitle, cards, columns, rows, csv_name, footnote="", budget=No
     except Exception:
         out = script.get_output()
         out.print_md("### %s\n%s" % (title, subtitle))
-        out.print_md("  \n".join("**%s** - %s" % (v, l) for v, l in cards))
+        out.print_md("  \n".join("**%s** - %s" % (v, label) for v, label in cards))
         out.print_table([[core.text(c) for c in r] for r in rows], columns=columns)
         out.print_code(traceback.format_exc())  # so a WPF problem is visible, not hidden

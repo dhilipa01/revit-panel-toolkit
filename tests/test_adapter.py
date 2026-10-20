@@ -48,6 +48,18 @@ class Level(Elem):
         self.Elevation = elev
 
 
+class TypeElem(Elem):
+    """A wall type with a classification parameter and a Description parameter."""
+
+    def __init__(self, i, name):
+        Elem.__init__(self, i, name)
+        self.p = {"CLASSIFICATION_CODE": Param(None, "")}
+        self.Parameters = [DefParam("Description", "Panel type " + name)]
+
+    def get_Parameter(self, bip):
+        return self.p.get(bip)
+
+
 class Param:
     HasValue = True
 
@@ -62,6 +74,17 @@ class Param:
 
     def Set(self, v):
         self.text = v
+
+
+class DefParam(Param):
+    """A parameter as listed in Element.Parameters: it has a Definition and a value string."""
+
+    def __init__(self, name, text):
+        Param.__init__(self, None, text)
+        self.Definition = types.SimpleNamespace(Name=name)
+
+    def AsValueString(self):
+        return self.text
 
 
 class Pt:
@@ -83,10 +106,12 @@ class LocationCurve:
 
 
 class Wall(Elem):
-    def __init__(self, i, typ, lvl, x, length, area, height, openings=0, edited=False, slanted=False):
+    def __init__(self, i, typ, lvl, x, length, area, height, openings=0, edited=False, slanted=False,
+                 fire=False):
         Elem.__init__(self, i, "wall")
         self.typ, self.LevelId, self.Location = typ, Eid(lvl), LocationCurve(x, 0.0)
         self.n_open, self.bbox_h = openings, height
+        self.Parameters = [DefParam("Fire Rating", "EI60")] if fire else []
         self.SketchId = Eid(55) if edited else Eid(-1)       # -1 = InvalidElementId (no profile sketch)
         self.CrossSection = "S" if slanted else "V"
         self.p = {"CURVE_ELEM_LENGTH": Param(length), "HOST_AREA_COMPUTED": Param(area),
@@ -182,11 +207,13 @@ def alert(msg, **kw):
 CFG = {}
 SAVE = []        # paths the fake save dialog returns
 PICK = ["net"]   # which pricing basis the fake choice dialog returns
+IDS_PATH = [os.path.join(ROOT, "examples", "panel_requirements.ids")]   # what the fake file picker returns
 cfg = types.SimpleNamespace(get_option=lambda k, d=None: CFG.get(k, d),
                             set_option=lambda k, v: CFG.__setitem__(k, v))
 forms = types.SimpleNamespace(
     alert=alert, ask_for_string=lambda **kw: "10",
     save_file=lambda **kw: SAVE.pop(0) if SAVE else None, WPFWindow=WPFWindow,
+    pick_file=lambda **kw: IDS_PATH[0],
     CommandSwitchWindow=types.SimpleNamespace(
         show=lambda options, message=None, **kw: options[1] if PICK[0] == "gross" else options[0]))
 out = types.SimpleNamespace(print_md=print, print_table=lambda *a, **k: None, print_code=print)
@@ -221,9 +248,9 @@ sys.modules["System.Windows"] = types.SimpleNamespace(Visibility=types.SimpleNam
 # ---- model: 2 levels, 2 wall types, 4 walls (feet / ft2, like Revit) ---------
 Level(10, "Level 1", 0.0)
 Level(11, "Level 2", 10.0)
-Elem(20, "LSF 140")
-Elem(21, "Drywall")
-Wall(1, 20, 11, 0.0, 10.0, 100.0, 10.0, openings=1)   # level 2
+TypeElem(20, "LSF 140")
+TypeElem(21, "Drywall")
+Wall(1, 20, 11, 0.0, 10.0, 100.0, 10.0, openings=1, fire=True)   # level 2
 Wall(2, 20, 10, 8.0, 10.0, 80.0, 10.0, openings=2)    # level 1, x=8; net 80 = 100 - 20 ft2 of openings
 Wall(3, 21, 10, 1.0, 5.0, 50.0, 10.0)                 # level 1, x=1
 Wall(4, 20, 10, 4.0, 10.0, 100.0, 10.0, edited=True)  # level 1, x=4; has an edited profile
@@ -283,7 +310,7 @@ with tempfile.TemporaryDirectory() as d:
     lines = csv_lines(os.path.join(d, "b.csv"))
     assert lines[0] == "Code,Description,Unit,Qty,Unit price (R$),Total (R$)", lines[0]
     assert lines[1].startswith(",Drywall,m2,") and lines[2].startswith(",LSF 140,m2,"), lines[1:3]
-    assert any("TOTAL (R$)" in l for l in lines) and any("TOTAL (EUR, approx.)" in l for l in lines), lines
+    assert any("TOTAL (R$)" in line for line in lines) and any("TOTAL (EUR, approx.)" in line for line in lines), lines
 
 SELECTION[:] = [Eid(1)]
 t, rows, w = run("Count")
@@ -312,6 +339,59 @@ assert rv._is_irregular(Wall(92, 20, 10, 0.0, 1.0, 1.0, 1.0, slanted=True))
 assert not rv._is_irregular(types.SimpleNamespace(CrossSection="V"))   # Revit < 2022 has no SketchId
 for k in (90, 91, 92):
     del Elem.reg[k]                                                    # keep the model walls only
+
+# ---- Classify Panels and IDS Check ---------------------------------------------
+import tempfile  # noqa: E402
+
+CFG["lang"] = "en"
+LSF_CODE = {"rates": {"LSF": {"rate": 500, "classification": {"system": "NBR 15965", "code": "3E.02"}}}}
+core.apply_config(LSF_CODE)
+code_param = Elem.reg[20].p["CLASSIFICATION_CODE"]
+
+code_param.IsReadOnly = True                                    # a read-only parameter is reported, not forced
+t, rows, w = run("Classify")
+assert code_param.text == "" and (t["v1"], t["v2"], t["v3"]) == ("0", "1", "1"), t
+assert rows == [["LSF 140", "NBR 15965", "3E.02", "3", "Read-only"]], rows
+code_param.IsReadOnly = False
+
+t, rows, w = run("Classify")                                    # wall types with a configured code get it
+assert code_param.text == "3E.02" and Elem.reg[21].p["CLASSIFICATION_CODE"].text == "", "Drywall is left alone"
+assert (t["v1"], t["v2"], t["v3"]) == ("1", "0", "1"), t        # written, not written, types without a code
+assert rows == [["LSF 140", "NBR 15965", "3E.02", "3", "Written"]], rows
+
+core.apply_config({})                                           # no codes configured: a message, no changes
+try:
+    run("Classify")
+except SystemExit:
+    pass
+assert "No classification codes" in ALERTS[-1], ALERTS[-1]
+
+core.apply_config(LSF_CODE)                                     # IDS Check against the shipped example file
+ALERTS.clear()
+t, rows, w = run("IdsCheck")
+assert t["subtitle"].startswith("Wall panel information requirements (example)"), t["subtitle"]
+assert (t["v1"], t["v2"], t["v3"]) == ("1", "4", "4"), t        # 1 specification, 4 panels, 4 failed requirements
+verdict = {(r[0], r[2]): r[3] for r in rows}
+assert len(rows) == 12 and verdict[("P-004", "property Pset_WallCommon.FireRating")] == "Pass", rows
+assert verdict[("P-001", "classification NBR 15965 any")] == "Fail"   # the Drywall wall has no code
+assert verdict[("P-003", "property Pset_WallCommon.FireRating")] == "Fail"
+
+with tempfile.TemporaryDirectory() as d:                        # a file that is not IDS gives a message
+    junk = os.path.join(d, "x.ids")
+    open(junk, "w").write("not xml")
+    IDS_PATH[0] = junk
+    ALERTS.clear()
+    try:
+        run("IdsCheck")
+    except SystemExit:
+        pass
+    assert any("Could not read the IDS file" in m for m in ALERTS), ALERTS
+IDS_PATH[0] = os.path.join(ROOT, "examples", "panel_requirements.ids")
+
+CFG["lang"] = "pt"
+t, rows, w = run("IdsCheck")
+assert t["title"] == u"Verificação IDS" and rows[0][3] == "Atende", (t["title"], rows[0])
+core.load_config()                                              # back to the shipped file
 
 # ---- Language button flips and persists --------------------------------------
 CFG["lang"] = "pt"
