@@ -1,6 +1,6 @@
 [project]
 name = "revit-panel-toolkit"
-version = "0.2.0"
+version = "0.3.0"
 description = "Calculate the number and price of wall panels from the Revit ribbon. A pyRevit extension for panelised construction."
 readme = "README.md"
 license = { text = "MIT" }
