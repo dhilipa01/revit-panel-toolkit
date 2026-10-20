@@ -1,0 +1,30 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test
+        run: |
+          python tests/test_core.py
+          python tests/test_ids.py
+          python tests/test_adapter.py
+      - name: Package the extension
+        run: |
+          cd src
+          zip -r "../Bauser.extension-${GITHUB_REF_NAME}.zip" Bauser.extension -x "*/__pycache__/*"
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" "Bauser.extension-${GITHUB_REF_NAME}.zip" --generate-notes

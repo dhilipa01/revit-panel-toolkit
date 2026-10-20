@@ -1,0 +1,11 @@
+{
+    "type": "extension",
+    "name": "Bauser",
+    "description": "Count, number, classify and price wall panels, and check them against an IDS file.",
+    "author": "Dhilipan Sankar",
+    "author_profile": "https://github.com/dhilipa01",
+    "url": "https://github.com/dhilipa01/revit-panel-toolkit.git",
+    "website": "https://github.com/dhilipa01/revit-panel-toolkit",
+    "image": "",
+    "dependencies": []
+}

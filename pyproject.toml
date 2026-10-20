@@ -1,0 +1,23 @@
+[project]
+name = "revit-panel-toolkit"
+version = "0.2.0"
+description = "Calculate the number and price of wall panels from the Revit ribbon. A pyRevit extension for panelised construction."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.8"
+
+[tool.ruff]
+line-length = 120
+target-version = "py38"
+extend-exclude = ["src/Bauser.extension/**/script.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+# tests import after setting sys.path and use one-line fake classes
+"tests/*" = ["E501", "E402", "I001", "E702"]
+"examples/*" = ["E402"]
+# clr.AddReference must run before the .NET imports
+"src/Bauser.extension/lib/bauser_ui.py" = ["E402", "I001"]
+"src/Bauser.extension/lib/bauser_text.py" = ["E501"]

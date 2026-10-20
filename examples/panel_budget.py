@@ -54,8 +54,8 @@ def main():
 
     if args.csv:
         lines, bt = core.budget_lines(SAMPLE, waste, RATES, basis)
-        out = [(l["code"], l["desc"], l["unit"], core.fmt(l["qty"], 2, L), core.fmt(l["price"], 2, L),
-                core.fmt(l["total"], 2, L)) for l in lines]
+        out = [(line["code"], line["desc"], line["unit"], core.fmt(line["qty"], 2, L), core.fmt(line["price"], 2, L),
+                core.fmt(line["total"], 2, L)) for line in lines]
         out += [("", "Waste (%s%%)" % core.fmt(args.waste, 0, L), "", "", "", core.fmt(bt["waste"], 2, L)),
                 ("", "TOTAL (R$)", "", "", "", core.fmt(bt["gross"], 2, L)),
                 ("", "TOTAL (EUR, approx.)", "", "", "", core.fmt(bt["eur"], 2, L))]
